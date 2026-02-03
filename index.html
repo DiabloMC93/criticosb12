@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Enfermería UCI - Bloque 2</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --text-dim: #b0b0b0;
+            --accent: #00e5ff;
+            --success: #4caf50;
+            --error: #f44336;
+            --border: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #app {
+            width: 95%;
+            max-width: 700px;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin: 20px 0;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .counters {
+            display: flex;
+            gap: 15px;
+        }
+
+        .counter {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .aciertos { background: rgba(76, 175, 80, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .fallos { background: rgba(244, 67, 54, 0.2); color: var(--error); border: 1px solid var(--error); }
+
+        .progress-text {
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-size: 1.15rem;
+            line-height: 1.4;
+            margin-bottom: 1.5rem;
+            color: #efefef;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option {
+            background: #252525;
+            border: 2px solid var(--border);
+            color: var(--text-main);
+            padding: 14px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            line-height: 1.3;
+        }
+
+        .option:hover:not(:disabled) {
+            border-color: var(--accent);
+            background: #2a2a2a;
+        }
+
+        .option.correct {
+            background: var(--success) !important;
+            border-color: var(--success);
+            color: white;
+        }
+
+        .option.wrong {
+            background: var(--error) !important;
+            border-color: var(--error);
+            color: white;
+        }
+
+        .option:disabled {
+            cursor: default;
+            opacity: 0.9;
+        }
+
+        .controls {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-next, .btn-restart {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn-next:disabled {
+            background: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .results {
+            text-align: center;
+        }
+
+        .results h1 { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+    const questions = [
+        {
+            q: "1. ¿Qué hacer ante un grado de PIA con 14 mmHg?",
+            options: [
+                "Signos clínicos: oliguria. RECOMENDACIONES: Resucitación, Hipervolemia",
+                "Signos clínicos: ninguno. RECOMENDACIONES: mantener volemia",
+                "Signos clínicos: anuria, descenso del GC, presiones aereas elevadas. RECOMENDACIONES: descompresion",
+                "Signos clínicos: anuria, descenso del GC, presiones aereas elevadas. RECOMENDACIONES: descompresion y exploracion"
+            ],
+            correct: 1
+        },
+        {
+            q: "2. Una presion intraadominal aneurisma de aorta con oliguria que recomendación son las indicadas:",
+            options: ["resucitacion/ hipervolemica", "mantener volemia", "descompresion", "descompresion y exploracion"],
+            correct: 0
+        },
+        {
+            q: "3. Cual no es un cuidado inmediato en un paciente crítico:",
+            options: [
+                "mejoran pronóstico, alargan estancias, implicación aparición de secuelas que incapacita autonomía del paciente",
+                "empeoran pronóstico, acortan estancias, implicación aparición de secuelas que incapacita autonomía del paciente",
+                "empeoran pronóstico, alargan estancias, no implica aparición de secuelas que incapacita autonomía del paciente",
+                "empeoran pronóstico, alargan estancias, implicación aparición de secuelas que incapacita autonomía del paciente"
+            ],
+            correct: 3
+        },
+        {
+            q: "4. Color de la temperatura:",
+            options: ["rojo", "negro", "verde", "azul"],
+            correct: 0
+        },
+        {
+            q: "5. El PIA elevado es no patológico cuando:",
+            options: ["En Obesidad", "En embarazo", "Cuando es cero", "A y B son correctas"],
+            correct: 3
+        },
+        {
+            q: "6. ¿Qué característica o características posee un paciente en una unidad de cuidados intensivos?",
+            options: [
+                "Paciente cuya condición patológica afecta uno o más sistemas",
+                "Presenta condiciones de irreversibilidad que hacen necesaria la aplicación de técnicas de soporte vital avanzado",
+                "Paciente que posee un riesgo potencial pero no actual de su vida",
+                "Paciente que posee un riesgo actual pero no potencial de su vida"
+            ],
+            correct: 0
+        },
+        {
+            q: "7. ¿Qué constante es únicamente invasiva?",
+            options: ["Presión venosa central", "Saturación de oxígeno", "Tensión arterial", "Capnografía"],
+            correct: 0
+        },
+        {
+            q: "8. Señale la opción más correcta con respecto a los cambios posturales en UCI:",
+            options: [
+                "Deben hacerse siempre, para evitar úlceras por presión",
+                "Deben hacerse según orden médica",
+                "Deben hacerse siempre, aunque la situación hemodinámica o respiratoria no lo permitan",
+                "Los cambios posturales en pacientes hemodializados están limitados en el tiempo"
+            ],
+            correct: 3
+        },
+        {
+            q: "9. Con respecto a los valores normales (fisiológicos) de la tensión arterial de un paciente, señale la opción incorrecta:",
+            options: [
+                "En un adulto la TAS es de 110 mmHg",
+                "Todas son incorrectas",
+                "En un recién nacido la TAS es de 120 mmHg",
+                "En un recién nacido la TAD es de 60 mmHg"
+            ],
+            correct: 2
+        },
+        {
+            q: "10. ¿Qué priorización debemos tener en cuenta en los cuidados de un paciente crítico?",
+            options: [
+                "La resolución del diagnóstico específico",
+                "Reanimación o estabilización del paciente antes de la resolución del diagnóstico",
+                "Todas son correctas",
+                "Los cuidados básicos del paciente como la higiene y prevención de úlceras por presión"
+            ],
+            correct: 1
+        },
+        {
+            q: "11. Señale la opción incorrecta con respecto de la especialización de la tecnología en la UCI:",
+            options: [
+                "Limitan la autonomía del paciente",
+                "Ayudan en los procedimientos terapéuticos y/o diagnósticos",
+                "Ayudan a cubrir la necesidad de confort del paciente",
+                "Ayudan a la valoración enfermera"
+            ],
+            correct: 2
+        },
+        {
+            q: "12. Color del pulso:",
+            options: ["rojo", "negro", "verde", "azul"],
+            correct: 2
+        },
+        {
+            q: "13. Señale la opción correcta con respecto a la monitorización de un paciente en UCI:",
+            options: [
+                "La monitorización de la TA continua solo se puede hacer con la TA invasiva",
+                "La capnografía se encuentra dentro de la monitorización invasiva",
+                "Para el control de las constantes neurológicas se necesita de la presión intracraneal",
+                "Existen dos tipos de monitorización: la no invasiva (TA, ECG...) y la invasiva (PA...)"
+            ],
+            correct: 3
+        },
+        {
+            q: "14. ¿Qué consideraciones debemos tener en cuenta antes de monitorizar la TA no invasiva? Señale la más correcta:",
+            options: [
+                "Debemos elegir la extremidad que más cerca esté del monitor",
+                "El tamaño del manguito de presión no influye",
+                "Debemos tomarla con el paciente sentado antes de haber reposado durante 15 minutos",
+                "Debemos elegir la extremidad contraria a una fistula arteriovenosa"
+            ],
+            correct: 3
+        },
+        {
+            q: "15. Señale la opción incorrecta con respecto en qué situaciones está indicada la monitorización no invasiva (telemetría):",
+            options: ["Bradicardias graves", "Control de arritmias no malignas como la FA", "Síncopes malignos", "Arritmias malignas como la asistolia"],
+            correct: 0
+        },
+        {
+            q: "16. Color de la presion:",
+            options: ["rojo", "negro", "verde", "azul"],
+            correct: 0
+        },
+        {
+            q: "17. ¿Qué escala de Glasgow tiene un paciente que abre los ojos al dolor, se encuentra desorientado cuando se le pregunta y mueve su cuerpo cuando se le ordena?",
+            options: ["9", "12", "11", "10"],
+            correct: 2
+        },
+        {
+            q: "18. ¿Qué repercusiones tienen las complicaciones no inmediatas de los cuidados diarios en UCI? Señale la incorrecta:",
+            options: [
+                "Pueden provocar una parada cardiorrespiratoria",
+                "Empeoran el pronóstico",
+                "Influyen en el tiempo medio de estancia en UCI",
+                "Influyen directamente en la mayor autonomía del paciente"
+            ],
+            correct: 3
+        },
+        {
+            q: "19. ¿Qué factor no afecta a la situación crítica del paciente ingresado en UCI?",
+            options: [
+                "Restricción familiar y ruido constantes",
+                "Aumento de la temperatura fría del ambiente",
+                "Movilización del paciente",
+                "Aumento de la temperatura del ambiente"
+            ],
+            correct: 3
+        },
+        {
+            q: "20. Señale la correcta en la monitorización de ECG:",
+            options: [
+                "5 electrodos: Rojo(MSD), Amarillo(MSI), Negro(MID), Verde(MII), Blanco(Diafragma)",
+                "5 electrodos: Rojo(MSD), Amarillo(MSI), Negro(MII), Verde(MID), Blanco(Diafragma)",
+                "3 electrodos: Rojo(MSD), Amarillo(MSI), Negro(Cualquier miembro inferior)",
+                "3 electrodos: Rojo(MSI), Amarillo(MSD), Negro(Cualquier miembro inferior)"
+            ],
+            correct: 0
+        },
+        {
+            q: "21. Dentro de los cuidados diarios del paciente crítico, señale la opción incorrecta:",
+            options: [
+                "La higiene del paciente son cuidados responsables de enfermería",
+                "Debemos comprobar la permeabilidad de la sonda nasogástrica",
+                "En un paciente intubado debemos realizar la higiene oral y nasal cada 24 horas",
+                "La hemofiltración no está contraindicada en los cambios posturales"
+            ],
+            correct: 2
+        },
+        {
+            q: "22. Pitt cayó de moto: abre ojos al hablar, desorientado, localiza dolor. ¿Puntuación Glasgow?",
+            options: ["10", "13", "12", "11"],
+            correct: 2
+        },
+        {
+            q: "23. Paciente abre ojos al hablar, habla inapropiada (grita), retirada al dolor. ¿Puntuación Glasgow?",
+            options: ["11", "9", "12", "10"],
+            correct: 3
+        },
+        {
+            q: "24. Color de la respiración:",
+            options: ["rojo", "negro", "verde", "azul"],
+            correct: 3
+        },
+        {
+            q: "25. ¿Qué valor es más anormal (patológico) en una capnografía de un neonato?",
+            options: ["50 mm Hg", "45 mm Hg", "35 mm Hg", "40 mm Hg"],
+            correct: 0
+        },
+        {
+            q: "26. ¿Qué monitorización inicial continua no debemos olvidar en cualquier UCI?",
+            options: [
+                "ECG, TA no invasiva, escala de Glasgow, pulsioximetría",
+                "ECG, TA no invasiva, temperatura, pulsioximetría",
+                "ECG, TA invasiva, temperatura, pulsioximetría",
+                "ECG, capnografía, escala de Glasgow, TA invasiva, temperatura"
+            ],
+            correct: 1
+        },
+        {
+            q: "27. ¿Qué balance hídrico tiene un paciente con Ingresos de 2000cc y Egresos de 1870cc?",
+            options: ["80", "20", "180", "130"],
+            correct: 3
+        },
+        {
+            q: "28. Con respecto a la telemetría señale la opción correcta:",
+            options: [
+                "Disminuye el número de ingresos, aunque no influye en la estancia",
+                "No garantiza la asistencia precoz en casos graves",
+                "Disminuye el confort del paciente en UCI",
+                "Aumenta la calidad en la monitorización cardiaca"
+            ],
+            correct: 3
+        }
+    ];
+
+    let currentIdx = 0;
+    let aciertos = 0;
+    let fallos = 0;
+    let hasAnswered = false;
+
+    const app = document.getElementById('app');
+
+    function renderQuestion() {
+        if (currentIdx >= questions.length) {
+            renderResults();
+            return;
+        }
+
+        hasAnswered = false;
+        const qData = questions[currentIdx];
+        app.innerHTML = `
+            <div class="header">
+                <span class="progress-text">Bloque 2 - Pregunta ${currentIdx + 1} de ${questions.length}</span>
+                <div class="counters">
+                    <span class="counter aciertos">Aciertos: ${aciertos}</span>
+                    <span class="counter fallos">Fallos: ${fallos}</span>
+                </div>
+            </div>
+            <h2>${qData.q}</h2>
+            <div class="options">
+                ${qData.options.map((opt, i) => `
+                    <button class="option" onclick="checkAnswer(${i})">
+                        <strong>${String.fromCharCode(65 + i)}.</strong> ${opt}
+                    </button>
+                `).join('')}
+            </div>
+            <div class="controls">
+                <button id="next-btn" class="btn-next" onclick="nextQuestion()" disabled>Siguiente</button>
+            </div>
+        `;
+    }
+
+    window.checkAnswer = function(index) {
+        if (hasAnswered) return;
+        hasAnswered = true;
+        
+        const qData = questions[currentIdx];
+        const buttons = document.querySelectorAll('.option');
+        const nextBtn = document.getElementById('next-btn');
+        
+        buttons.forEach(btn => btn.disabled = true);
+
+        if (index === qData.correct) {
+            buttons[index].classList.add('correct');
+            aciertos++;
+        } else {
+            buttons[index].classList.add('wrong');
+            buttons[qData.correct].classList.add('correct');
+            fallos++;
+        }
+
+        nextBtn.disabled = false;
+        document.querySelector('.aciertos').innerText = `Aciertos: ${aciertos}`;
+        document.querySelector('.fallos').innerText = `Fallos: ${fallos}`;
+    }
+
+    window.nextQuestion = function() {
+        currentIdx++;
+        renderQuestion();
+        window.scrollTo(0, 0);
+    }
+
+    function renderResults() {
+        const total = questions.length;
+        const percent = Math.round((aciertos / total) * 100);
+        app.innerHTML = `
+            <div class="results">
+                <h1>Test Completado</h1>
+                <p>Resumen del bloque:</p>
+                <p style="font-size: 1.5rem; margin: 20px 0;">Efectividad: <strong>${percent}%</strong></p>
+                <div style="display: flex; justify-content: center; gap: 40px; margin: 30px 0;">
+                    <div><h3 style="color: var(--success); margin: 0; font-size: 2.5rem;">${aciertos}</h3><small>Aciertos</small></div>
+                    <div><h3 style="color: var(--error); margin: 0; font-size: 2.5rem;">${fallos}</h3><small>Fallos</small></div>
+                </div>
+                <button class="btn-restart" onclick="restart()">Reiniciar Bloque</button>
+            </div>
+        `;
+    }
+
+    window.restart = function() {
+        currentIdx = 0;
+        aciertos = 0;
+        fallos = 0;
+        renderQuestion();
+    }
+
+    renderQuestion();
+</script>
+
+</body>
+</html>
